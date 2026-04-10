@@ -7,13 +7,13 @@ namespace Nahook\Errors;
 /**
  * Network-level failure (no HTTP response received).
  */
-class NahookNetworkError extends NahookError
+final class NahookNetworkError extends NahookError
 {
     public readonly \Throwable $cause;
 
     public function __construct(\Throwable $cause)
     {
-        parent::__construct('Network error: ' . $cause->getMessage());
+        parent::__construct('Network error: ' . $cause->getMessage(), 0, $cause);
         $this->cause = $cause;
     }
 }

@@ -7,7 +7,7 @@ namespace Nahook\Errors;
 /**
  * Request timed out.
  */
-class NahookTimeoutError extends NahookError
+final class NahookTimeoutError extends NahookError
 {
     public readonly int $timeoutMs;
 

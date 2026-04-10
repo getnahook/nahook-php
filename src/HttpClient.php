@@ -14,7 +14,7 @@ use Nahook\Errors\NahookNetworkError;
 use Nahook\Errors\NahookTimeoutError;
 use Psr\Http\Message\ResponseInterface;
 
-class HttpClient
+final class HttpClient
 {
     private const DEFAULT_BASE_URL = 'https://api.nahook.com';
     private const DEFAULT_TIMEOUT_MS = 30000;

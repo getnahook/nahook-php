@@ -7,7 +7,7 @@ namespace Nahook\Errors;
 /**
  * API returned an error response (4xx/5xx).
  */
-class NahookAPIError extends NahookError
+final class NahookAPIError extends NahookError
 {
     public readonly int $status;
     public readonly string $errorCode;

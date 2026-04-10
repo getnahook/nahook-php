@@ -6,7 +6,7 @@ namespace Nahook\Resources;
 
 use Nahook\HttpClient;
 
-class PortalSessionsResource
+final class PortalSessionsResource
 {
     public function __construct(private readonly HttpClient $http)
     {

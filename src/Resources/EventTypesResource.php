@@ -6,7 +6,7 @@ namespace Nahook\Resources;
 
 use Nahook\HttpClient;
 
-class EventTypesResource
+final class EventTypesResource
 {
     public function __construct(private readonly HttpClient $http)
     {
