@@ -10,7 +10,7 @@ use Nahook\Resources\EventTypesResource;
 use Nahook\Resources\PortalSessionsResource;
 use Nahook\Resources\SubscriptionsResource;
 
-class NahookManagement
+final class NahookManagement
 {
     public readonly EndpointsResource $endpoints;
     public readonly EventTypesResource $eventTypes;

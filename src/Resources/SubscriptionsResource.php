@@ -6,7 +6,7 @@ namespace Nahook\Resources;
 
 use Nahook\HttpClient;
 
-class SubscriptionsResource
+final class SubscriptionsResource
 {
     public function __construct(private readonly HttpClient $http)
     {

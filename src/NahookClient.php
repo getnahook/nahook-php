@@ -6,7 +6,7 @@ namespace Nahook;
 
 use Ramsey\Uuid\Uuid;
 
-class NahookClient
+final class NahookClient
 {
     private readonly HttpClient $http;
 
