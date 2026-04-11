@@ -24,7 +24,7 @@ class ClientTest extends TestCase
 
     public function testAcceptsValidApiKey(): void
     {
-        $client = new NahookClient('nhk_test123', [
+        $client = new NahookClient('nhk_us_test123', [
             'baseUrl' => 'https://api.test.com',
         ]);
         $this->assertNotNull($client);

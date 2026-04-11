@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
 class ManagementTest extends TestCase
 {
     private const TOKEN = 'nhm_test123';
-    private const CLIENT_KEY = 'nhk_test123';
+    private const CLIENT_KEY = 'nhk_us_test123';
     private const BASE_URL = 'https://api.test.com';
 
     /** @var array<array{request: \Psr\Http\Message\RequestInterface}> */
@@ -535,7 +535,7 @@ class ManagementTest extends TestCase
         $this->assertSame('accepted', $result['status']);
         $this->assertStringContainsString('/api/ingest/ep_123', (string) $request->getUri());
         $this->assertSame('POST', $request->getMethod());
-        $this->assertSame('Bearer nhk_test123', $request->getHeaderLine('Authorization'));
+        $this->assertSame('Bearer nhk_us_test123', $request->getHeaderLine('Authorization'));
     }
 
     public function testClientSendGeneratesIdempotencyKey(): void
