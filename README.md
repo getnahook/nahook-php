@@ -22,7 +22,7 @@ Use `NahookClient` to send webhooks via your API key.
 ```php
 use Nahook\NahookClient;
 
-$client = new NahookClient('nhk_your_api_key', [
+$client = new NahookClient('nhk_us_your_api_key', [
     'baseUrl' => 'https://api.nahook.com',  // optional, this is the default
     'timeout' => 30000,                       // optional, default 30s (in ms)
     'retries' => 3,                           // optional, default 0
@@ -210,7 +210,7 @@ use Nahook\Errors\NahookAPIError;
 use Nahook\Errors\NahookNetworkError;
 use Nahook\Errors\NahookTimeoutError;
 
-$client = new NahookClient('nhk_your_api_key');
+$client = new NahookClient('nhk_us_your_api_key');
 
 try {
     $result = $client->send('ep_abc', ['payload' => ['test' => true]]);
@@ -244,7 +244,7 @@ try {
 The client supports automatic retries with exponential backoff and full jitter.
 
 ```php
-$client = new NahookClient('nhk_your_api_key', [
+$client = new NahookClient('nhk_us_your_api_key', [
     'retries' => 3,  // retry up to 3 times on retryable errors
 ]);
 ```
