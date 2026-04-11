@@ -19,7 +19,7 @@ final class HttpClient
     private const DEFAULT_BASE_URL = 'https://api.nahook.com';
     private const DEFAULT_TIMEOUT_MS = 30000;
     private const SDK_VERSION = '0.1.0';
-    private const USER_AGENT = 'nahook-php/0.1.0';
+    private const USER_AGENT = 'nahook-php/' . self::SDK_VERSION;
     private const BASE_DELAY_MS = 500;
     private const MAX_DELAY_MS = 10000;
 
