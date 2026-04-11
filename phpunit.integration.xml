@@ -9,5 +9,8 @@
         <testsuite name="integration">
             <directory>tests/Integration</directory>
         </testsuite>
+        <testsuite name="management">
+            <directory>tests/Management</directory>
+        </testsuite>
     </testsuites>
 </phpunit>

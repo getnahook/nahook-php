@@ -13,7 +13,9 @@ final class SubscriptionsResource
     }
 
     /**
-     * @return array{data: array<mixed>}
+     * List event types subscribed to this endpoint.
+     *
+     * @return array{data: array<int, array{id: string, eventTypeId: string, eventTypeName: string, createdAt: string}>}
      */
     public function list(string $workspaceId, string $endpointId): array
     {
@@ -22,21 +24,22 @@ final class SubscriptionsResource
             'path' => '/management/v1/workspaces/' . rawurlencode($workspaceId)
                 . '/endpoints/' . rawurlencode($endpointId) . '/subscriptions',
         ]);
-
         return ['data' => $data];
     }
 
     /**
-     * @param array<string, mixed> $options
-     * @return array<string, mixed>
+     * Subscribe an endpoint to one or more event types.
+     *
+     * @param string[] $eventTypeIds Array of event type public IDs (e.g. ["evt_..."])
+     * @return array{subscribed: int}
      */
-    public function create(string $workspaceId, string $endpointId, array $options): array
+    public function create(string $workspaceId, string $endpointId, array $eventTypeIds): array
     {
         return $this->http->request([
             'method' => 'POST',
             'path' => '/management/v1/workspaces/' . rawurlencode($workspaceId)
                 . '/endpoints/' . rawurlencode($endpointId) . '/subscriptions',
-            'body' => $options,
+            'body' => ['eventTypeIds' => $eventTypeIds],
         ]);
     }
 
