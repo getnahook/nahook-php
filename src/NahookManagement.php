@@ -6,6 +6,7 @@ namespace Nahook;
 
 use Nahook\Resources\ApplicationsResource;
 use Nahook\Resources\EndpointsResource;
+use Nahook\Resources\EnvironmentsResource;
 use Nahook\Resources\EventTypesResource;
 use Nahook\Resources\PortalSessionsResource;
 use Nahook\Resources\SubscriptionsResource;
@@ -13,6 +14,7 @@ use Nahook\Resources\SubscriptionsResource;
 final class NahookManagement
 {
     public readonly EndpointsResource $endpoints;
+    public readonly EnvironmentsResource $environments;
     public readonly EventTypesResource $eventTypes;
     public readonly ApplicationsResource $applications;
     public readonly SubscriptionsResource $subscriptions;
@@ -45,6 +47,7 @@ final class NahookManagement
         $http = new HttpClient($config);
 
         $this->endpoints = new EndpointsResource($http);
+        $this->environments = new EnvironmentsResource($http);
         $this->eventTypes = new EventTypesResource($http);
         $this->applications = new ApplicationsResource($http);
         $this->subscriptions = new SubscriptionsResource($http);
