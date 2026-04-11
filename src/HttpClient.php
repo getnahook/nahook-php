@@ -23,6 +23,20 @@ final class HttpClient
     private const BASE_DELAY_MS = 500;
     private const MAX_DELAY_MS = 10000;
 
+    private const REGION_BASE_URLS = [
+        'us' => 'https://us.api.nahook.com',
+        'eu' => 'https://eu.api.nahook.com',
+        'ap' => 'https://ap.api.nahook.com',
+    ];
+
+    private static function resolveBaseUrl(string $token): string
+    {
+        if (preg_match('/^nhk_([a-z]{2})_/', $token, $m)) {
+            return self::REGION_BASE_URLS[$m[1]] ?? self::DEFAULT_BASE_URL;
+        }
+        return self::DEFAULT_BASE_URL;
+    }
+
     private readonly string $token;
     private readonly string $baseUrl;
     private readonly int $timeout;
@@ -42,7 +56,7 @@ final class HttpClient
     {
         $this->token = $config['token'];
         $baseUrl = $config['baseUrl'] ?? null;
-        $this->baseUrl = rtrim($baseUrl !== null && $baseUrl !== '' ? $baseUrl : self::DEFAULT_BASE_URL, '/');
+        $this->baseUrl = rtrim($baseUrl !== null && $baseUrl !== '' ? $baseUrl : self::resolveBaseUrl($config['token']), '/');
         $this->timeout = $config['timeout'] ?? self::DEFAULT_TIMEOUT_MS;
         $this->retries = $config['retries'] ?? 0;
 
