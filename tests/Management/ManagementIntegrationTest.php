@@ -242,6 +242,108 @@ final class ManagementIntegrationTest extends TestCase
     }
 
     // ---------------------------------------------------------------
+    // Environments CRUD
+    // ---------------------------------------------------------------
+
+    public function testEnvironmentsCrud(): void
+    {
+        $ts = time();
+
+        // Create
+        $created = $this->mgmt->environments->create($this->workspaceId, [
+            'name' => "PHP Test Env {$ts}",
+            'slug' => "php-test-env-{$ts}",
+        ]);
+        $this->assertArrayHasKey('id', $created);
+        $envId = $created['id'];
+        $this->assertSame("PHP Test Env {$ts}", $created['name']);
+        $this->assertSame("php-test-env-{$ts}", $created['slug']);
+        $this->assertArrayHasKey('isDefault', $created);
+        $this->assertArrayHasKey('createdAt', $created);
+        $this->assertArrayHasKey('updatedAt', $created);
+
+        // List (should contain at least the default env + our new one)
+        $listed = $this->mgmt->environments->list($this->workspaceId);
+        $this->assertArrayHasKey('data', $listed);
+        $this->assertIsArray($listed['data']);
+        $this->assertGreaterThanOrEqual(2, count($listed['data']));
+        $ids = array_column($listed['data'], 'id');
+        $this->assertContains($envId, $ids);
+
+        // Get
+        $fetched = $this->mgmt->environments->get($this->workspaceId, $envId);
+        $this->assertSame($envId, $fetched['id']);
+        $this->assertSame("PHP Test Env {$ts}", $fetched['name']);
+
+        // Update
+        $updatedName = "Updated PHP Env {$ts}";
+        $updated = $this->mgmt->environments->update($this->workspaceId, $envId, [
+            'name' => $updatedName,
+        ]);
+        $this->assertSame($envId, $updated['id']);
+        $this->assertSame($updatedName, $updated['name']);
+
+        // Delete
+        $this->mgmt->environments->delete($this->workspaceId, $envId);
+
+        // Confirm deletion via 404
+        try {
+            $this->mgmt->environments->get($this->workspaceId, $envId);
+            $this->fail('Expected NahookAPIError (404) after deletion');
+        } catch (NahookAPIError $e) {
+            $this->assertSame(404, $e->status);
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // Event Type Visibility
+    // ---------------------------------------------------------------
+
+    public function testEventTypeVisibility(): void
+    {
+        $ts = time();
+
+        // Create an environment
+        $env = $this->mgmt->environments->create($this->workspaceId, [
+            'name' => "PHP Vis Env {$ts}",
+            'slug' => "php-vis-env-{$ts}",
+        ]);
+        $envId = $env['id'];
+
+        // Create an event type
+        $eventType = $this->mgmt->eventTypes->create($this->workspaceId, [
+            'name' => "test.vis.php.{$ts}",
+            'description' => "PHP visibility test event type {$ts}",
+        ]);
+        $eventTypeId = $eventType['id'];
+
+        // List visibility
+        $visibility = $this->mgmt->environments->listEventTypeVisibility($this->workspaceId, $envId);
+        $this->assertArrayHasKey('data', $visibility);
+        $this->assertIsArray($visibility['data']);
+
+        // Set published = true
+        $result = $this->mgmt->environments->setEventTypeVisibility(
+            $this->workspaceId,
+            $envId,
+            $eventTypeId,
+            true,
+        );
+        $this->assertSame($eventTypeId, $result['eventTypeId']);
+        $this->assertTrue($result['published']);
+
+        // Verify in list
+        $afterPublish = $this->mgmt->environments->listEventTypeVisibility($this->workspaceId, $envId);
+        $published = array_filter($afterPublish['data'], fn($v) => $v['eventTypeId'] === $eventTypeId);
+        $this->assertCount(1, $published);
+        $this->assertTrue(array_values($published)[0]['published']);
+
+        // Cleanup
+        $this->mgmt->environments->delete($this->workspaceId, $envId);
+        $this->mgmt->eventTypes->delete($this->workspaceId, $eventTypeId);
+    }
+
+    // ---------------------------------------------------------------
     // Error: Invalid Token
     // ---------------------------------------------------------------
 
