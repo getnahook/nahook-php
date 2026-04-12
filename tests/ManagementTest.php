@@ -68,6 +68,7 @@ class ManagementTest extends TestCase
         $this->assertNotNull($mgmt->applications);
         $this->assertNotNull($mgmt->subscriptions);
         $this->assertNotNull($mgmt->portalSessions);
+        $this->assertNotNull($mgmt->environments);
     }
 
     public function testRejectsInvalidClientKeyPrefix(): void
@@ -398,12 +399,12 @@ class ManagementTest extends TestCase
         ]);
         $mgmt = $this->createManagement($mock);
 
-        $mgmt->subscriptions->create('ws_abc', 'ep_1', ['eventTypeId' => 'evt_1']);
+        $mgmt->subscriptions->create('ws_abc', 'ep_1', ['evt_1']);
         $request = $this->lastRequest();
 
         $this->assertSame('POST', $request->getMethod());
         $body = json_decode((string) $request->getBody(), true);
-        $this->assertSame('evt_1', $body['eventTypeId']);
+        $this->assertSame(['evt_1'], $body['eventTypeIds']);
     }
 
     public function testSubscriptionsDeleteSendsDeleteWithEventTypeIdInPath(): void
@@ -459,6 +460,127 @@ class ManagementTest extends TestCase
 
         $body = json_decode((string) $request->getBody(), true);
         $this->assertEmpty($body);
+    }
+
+    // ── Environments ──
+
+    public function testEnvironmentsListSendsGetToEnvironments(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([['id' => 'env_1', 'name' => 'Production', 'slug' => 'production', 'isDefault' => true]])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $result = $mgmt->environments->list('ws_abc');
+        $request = $this->lastRequest();
+
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame(
+            'https://api.test.com/management/v1/workspaces/ws_abc/environments',
+            (string) $request->getUri()
+        );
+        $this->assertCount(1, $result['data']);
+    }
+
+    public function testEnvironmentsCreateSendsPostWithBody(): void
+    {
+        $mock = new MockHandler([
+            new Response(201, [], json_encode(['id' => 'env_new', 'name' => 'Staging', 'slug' => 'staging', 'isDefault' => false])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->environments->create('ws_abc', ['name' => 'Staging', 'slug' => 'staging']);
+        $request = $this->lastRequest();
+
+        $this->assertSame('POST', $request->getMethod());
+        $this->assertStringContainsString('/environments', (string) $request->getUri());
+        $body = json_decode((string) $request->getBody(), true);
+        $this->assertSame('Staging', $body['name']);
+        $this->assertSame('staging', $body['slug']);
+    }
+
+    public function testEnvironmentsGetSendsGetToEnvironmentsId(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['id' => 'env_1', 'name' => 'Production'])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->environments->get('ws_abc', 'env_1');
+        $request = $this->lastRequest();
+
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame(
+            'https://api.test.com/management/v1/workspaces/ws_abc/environments/env_1',
+            (string) $request->getUri()
+        );
+    }
+
+    public function testEnvironmentsUpdateSendsPatchWithBody(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['id' => 'env_1', 'name' => 'Pre-production'])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->environments->update('ws_abc', 'env_1', ['name' => 'Pre-production']);
+        $request = $this->lastRequest();
+
+        $this->assertSame('PATCH', $request->getMethod());
+        $this->assertStringContainsString('/environments/env_1', (string) $request->getUri());
+        $body = json_decode((string) $request->getBody(), true);
+        $this->assertSame('Pre-production', $body['name']);
+    }
+
+    public function testEnvironmentsDeleteSendsDelete(): void
+    {
+        $mock = new MockHandler([
+            new Response(204),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->environments->delete('ws_abc', 'env_1');
+        $request = $this->lastRequest();
+
+        $this->assertSame('DELETE', $request->getMethod());
+        $this->assertStringContainsString('/environments/env_1', (string) $request->getUri());
+    }
+
+    public function testEnvironmentsListEventTypeVisibilitySendsGetToEventTypes(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([['eventTypeName' => 'order.created', 'published' => true]])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $result = $mgmt->environments->listEventTypeVisibility('ws_abc', 'env_1');
+        $request = $this->lastRequest();
+
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame(
+            'https://api.test.com/management/v1/workspaces/ws_abc/environments/env_1/event-types',
+            (string) $request->getUri()
+        );
+        $this->assertCount(1, $result['data']);
+    }
+
+    public function testEnvironmentsSetEventTypeVisibilitySendsPutWithBody(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['eventTypeName' => 'order.created', 'published' => true])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->environments->setEventTypeVisibility('ws_abc', 'env_1', 'evt_1', ['published' => true]);
+        $request = $this->lastRequest();
+
+        $this->assertSame('PUT', $request->getMethod());
+        $this->assertSame(
+            'https://api.test.com/management/v1/workspaces/ws_abc/environments/env_1/event-types/evt_1/visibility',
+            (string) $request->getUri()
+        );
+        $body = json_decode((string) $request->getBody(), true);
+        $this->assertTrue($body['published']);
     }
 
     // ── Headers ──
