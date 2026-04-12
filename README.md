@@ -22,12 +22,29 @@ Use `NahookClient` to send webhooks via your API key.
 ```php
 use Nahook\NahookClient;
 
+// Simple
+$client = new NahookClient('nhk_us_your_api_key');
+
+// With options
 $client = new NahookClient('nhk_us_your_api_key', [
-    'baseUrl' => 'https://api.nahook.com',  // optional, this is the default
     'timeout' => 30000,                       // optional, default 30s (in ms)
     'retries' => 3,                           // optional, default 0
 ]);
 ```
+
+#### Configuration
+
+The SDK automatically routes requests to the correct regional API based on your API key prefix (`nhk_us_...` -> US, `nhk_eu_...` -> EU, `nhk_ap_...` -> Asia Pacific). No configuration needed.
+
+To override the base URL (for testing or local development):
+
+```php
+$client = new NahookClient('nhk_us_your_api_key', [
+    'baseUrl' => 'http://localhost:3001',
+]);
+```
+
+For unit tests, mock the SDK client at the dependency injection boundary. For integration tests, override the base URL to point at a local server.
 
 #### Send to a specific endpoint
 
@@ -83,8 +100,11 @@ Use `NahookManagement` to manage endpoints, event types, applications, subscript
 ```php
 use Nahook\NahookManagement;
 
+// Simple
+$mgmt = new NahookManagement('nhm_your_management_token');
+
+// With options
 $mgmt = new NahookManagement('nhm_your_management_token', [
-    'baseUrl' => 'https://api.nahook.com',  // optional
     'timeout' => 30000,                       // optional
 ]);
 ```
