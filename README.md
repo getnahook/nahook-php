@@ -189,6 +189,43 @@ $sub = $mgmt->subscriptions->create('ws_workspace_id', 'ep_abc123', [
 $mgmt->subscriptions->delete('ws_workspace_id', 'ep_abc123', 'evt_abc123');
 ```
 
+#### Environments
+
+```php
+// List environments
+$result = $mgmt->environments->list('ws_workspace_id');
+
+// Create an environment
+$env = $mgmt->environments->create('ws_workspace_id', [
+    'name' => 'Staging',
+    'slug' => 'staging',
+]);
+
+// Get an environment
+$env = $mgmt->environments->get('ws_workspace_id', 'env_abc123');
+
+// Update an environment
+$env = $mgmt->environments->update('ws_workspace_id', 'env_abc123', [
+    'name' => 'Pre-production',
+]);
+
+// Delete an environment
+$mgmt->environments->delete('ws_workspace_id', 'env_abc123');
+```
+
+#### Event Type Visibility
+
+```php
+// List event type visibility for an environment
+$result = $mgmt->environments->listEventTypeVisibility('ws_workspace_id', 'env_abc123');
+
+// Set an event type as published in an environment
+$vis = $mgmt->environments->setEventTypeVisibility('ws_workspace_id', 'env_abc123', 'evt_abc123', [
+    'published' => true,
+]);
+// $vis = ['eventTypeId' => 'evt_...', 'eventTypeName' => 'order.paid', 'published' => true]
+```
+
 #### Portal Sessions
 
 ```php
