@@ -87,18 +87,22 @@ final class EnvironmentsResource
     /**
      * @return array<string, mixed>
      */
+    /**
+     * @param array{published: bool} $options
+     * @return array<string, mixed>
+     */
     public function setEventTypeVisibility(
         string $workspaceId,
         string $envId,
         string $eventTypeId,
-        bool $published,
+        array $options,
     ): array {
         return $this->http->request([
             'method' => 'PUT',
             'path' => '/management/v1/workspaces/' . rawurlencode($workspaceId)
                 . '/environments/' . rawurlencode($envId)
                 . '/event-types/' . rawurlencode($eventTypeId) . '/visibility',
-            'body' => ['published' => $published],
+            'body' => $options,
         ]);
     }
 }

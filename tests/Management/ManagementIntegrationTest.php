@@ -327,7 +327,7 @@ final class ManagementIntegrationTest extends TestCase
             $this->workspaceId,
             $envId,
             $eventTypeId,
-            true,
+            ['published' => true],
         );
         $this->assertSame($eventTypeId, $result['eventTypeId']);
         $this->assertTrue($result['published']);
