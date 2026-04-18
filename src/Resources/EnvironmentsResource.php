@@ -85,9 +85,6 @@ final class EnvironmentsResource
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    /**
      * @param array{published: bool} $options
      * @return array<string, mixed>
      */
