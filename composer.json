@@ -4,6 +4,14 @@
     "type": "library",
     "license": "MIT",
     "homepage": "https://github.com/getnahook/nahook-php",
+    "authors": [
+        {
+            "name": "Nahook",
+            "email": "support@nahook.com",
+            "homepage": "https://nahook.com",
+            "role": "Maintainer"
+        }
+    ],
     "support": {
         "issues": "https://github.com/getnahook/nahook-php/issues",
         "source": "https://github.com/getnahook/nahook-php",
