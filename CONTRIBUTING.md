@@ -11,7 +11,7 @@ This repository is a **subtree-split mirror** of the PHP SDK from our private mo
 - **Bug reports** — open a GitHub issue with: reproduction steps, SDK version, PHP version (`php --version`), OS, and your composer dependencies.
 - **Feature requests** — open an issue describing the use case and the API surface you'd want.
 - **Small code suggestions** — paste a snippet in an issue and describe intent; we'll port it into the monorepo and credit you in the resulting commit.
-- **Substantial patches** — email `support@nahook.com` first; we'll either discuss read access to the monorepo or hand-port your change with credit.
+- **Substantial patches** — email `support@nahook.com` first; we'll hand-port your change into the monorepo and credit you in the resulting commit.
 
 ## Local development
 
@@ -19,7 +19,7 @@ This repository is a **subtree-split mirror** of the PHP SDK from our private mo
 git clone https://github.com/getnahook/nahook-php
 cd nahook-php
 composer install
-vendor/bin/phpunit              # 351 tests
+vendor/bin/phpunit              # full unit test suite
 vendor/bin/phpstan analyse src  # static analysis (default level)
 ```
 
