@@ -3,6 +3,12 @@
     "description": "Official PHP SDK for the Nahook webhook platform",
     "type": "library",
     "license": "MIT",
+    "homepage": "https://github.com/getnahook/nahook-php",
+    "support": {
+        "issues": "https://github.com/getnahook/nahook-php/issues",
+        "source": "https://github.com/getnahook/nahook-php",
+        "docs": "https://docs.nahook.com"
+    },
     "require": {
         "php": ">=8.1",
         "guzzlehttp/guzzle": "^7.0",
