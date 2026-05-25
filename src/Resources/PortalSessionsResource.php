@@ -13,7 +13,13 @@ final class PortalSessionsResource
     }
 
     /**
-     * @param array<string, mixed> $options
+     * Create a portal session for a workspace application.
+     *
+     * @param array{
+     *     metadata?: array<string, string>,
+     *     role?: string,
+     *     expiresInMinutes?: int,
+     * } $options
      * @return array<string, mixed>
      */
     public function create(string $workspaceId, string $appId, array $options = []): array
