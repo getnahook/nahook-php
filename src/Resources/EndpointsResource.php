@@ -26,7 +26,18 @@ final class EndpointsResource
     }
 
     /**
-     * @param array<string, mixed> $options
+     * Create an endpoint.
+     *
+     * @param array<string, mixed> $options Endpoint fields. Recognized keys:
+     *   - url (string, required)
+     *   - type (string, optional)
+     *   - description (string, optional)
+     *   - metadata (array<string,string>, optional)
+     *   - config (array<string,mixed>, optional)
+     *   - authUsername / authPassword (string, optional)
+     *   - environmentId (string, optional) Public id (e.g. "env_abc123") of the
+     *     environment to scope this endpoint. If omitted, the workspace's
+     *     default environment is used.
      * @return array<string, mixed>
      */
     public function create(string $workspaceId, array $options): array
