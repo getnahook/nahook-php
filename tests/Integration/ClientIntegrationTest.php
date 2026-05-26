@@ -116,7 +116,9 @@ final class ClientIntegrationTest extends TestCase
 
     public function testTrigger_Unsubscribed(): void
     {
-        $result = $this->client->trigger('event.type.nobody.subscribes.to.this', [
+        // Pre-seeded fixture event type with zero subscriptions — shared across all SDK
+        // integration tests. See packages/db/src/seeds/test-fixtures.sql section 8b.
+        $result = $this->client->trigger('event.type.nobody.subscribed.to', [
             'payload' => ['noop' => true],
         ]);
 
