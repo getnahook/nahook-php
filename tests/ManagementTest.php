@@ -583,6 +583,242 @@ class ManagementTest extends TestCase
         $this->assertTrue($body['published']);
     }
 
+    // ── Deliveries ──
+
+    public function testDeliveriesListReturnsPaginatedDataAndNextCursor(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([
+                'deliveries' => [
+                    [
+                        'id' => 'del_a',
+                        'idempotencyKey' => 'k1',
+                        'endpointId' => 'ep_1',
+                        'status' => 'delivered',
+                        'totalAttempts' => 1,
+                        'firstAttemptAt' => '2026-05-28T14:30:59Z',
+                        'deliveredAt' => '2026-05-28T14:30:59Z',
+                        'nextRetryAt' => null,
+                        'hasPayload' => true,
+                        'createdAt' => '2026-05-28T14:30:59Z',
+                        'updatedAt' => '2026-05-28T14:30:59Z',
+                    ],
+                    [
+                        'id' => 'del_b',
+                        'idempotencyKey' => 'k2',
+                        'endpointId' => 'ep_1',
+                        'status' => 'failed',
+                        'totalAttempts' => 3,
+                        'firstAttemptAt' => '2026-05-28T14:31:00Z',
+                        'deliveredAt' => null,
+                        'nextRetryAt' => null,
+                        'hasPayload' => false,
+                        'createdAt' => '2026-05-28T14:31:00Z',
+                        'updatedAt' => '2026-05-28T14:31:00Z',
+                    ],
+                ],
+                'nextCursor' => 'opaque-token-aaa',
+            ])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $result = $mgmt->deliveries->list('ws_abc', 'ep_1');
+        $request = $this->lastRequest();
+
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame(
+            'https://api.test.com/management/v1/workspaces/ws_abc/endpoints/ep_1/deliveries',
+            (string) $request->getUri()
+        );
+        $this->assertCount(2, $result->data);
+        $this->assertSame('del_a', $result->data[0]->id);
+        $this->assertSame('opaque-token-aaa', $result->nextCursor);
+    }
+
+    public function testDeliveriesListReturnsNullCursorWhenLastPage(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([
+                'deliveries' => [],
+                'nextCursor' => null,
+            ])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $result = $mgmt->deliveries->list('ws_abc', 'ep_1');
+
+        $this->assertSame([], $result->data);
+        $this->assertNull($result->nextCursor);
+    }
+
+    public function testDeliveriesListForwardsQueryParams(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['deliveries' => [], 'nextCursor' => null])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->deliveries->list('ws_abc', 'ep_1', [
+            'limit' => 25,
+            'cursor' => 'opaque-token-xyz',
+            'status' => 'failed',
+        ]);
+        $uri = (string) $this->lastRequest()->getUri();
+
+        $this->assertStringContainsString('limit=25', $uri);
+        $this->assertStringContainsString('cursor=opaque-token-xyz', $uri);
+        $this->assertStringContainsString('status=failed', $uri);
+    }
+
+    public function testDeliveriesListOmitsUnsetQueryParams(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['deliveries' => [], 'nextCursor' => null])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->deliveries->list('ws_abc', 'ep_1');
+        $uri = (string) $this->lastRequest()->getUri();
+
+        $this->assertSame(
+            'https://api.test.com/management/v1/workspaces/ws_abc/endpoints/ep_1/deliveries',
+            $uri
+        );
+    }
+
+    public function testDeliveriesGetReturnsMetadataWithoutEnvelopeByDefault(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([
+                'id' => 'del_a',
+                'idempotencyKey' => 'k1',
+                'endpointId' => 'ep_1',
+                'status' => 'delivered',
+                'totalAttempts' => 1,
+                'firstAttemptAt' => '2026-05-28T14:30:59Z',
+                'deliveredAt' => '2026-05-28T14:30:59Z',
+                'nextRetryAt' => null,
+                'hasPayload' => true,
+                'createdAt' => '2026-05-28T14:30:59Z',
+                'updatedAt' => '2026-05-28T14:30:59Z',
+            ])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $delivery = $mgmt->deliveries->get('ws_abc', 'del_a');
+        $request = $this->lastRequest();
+
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame(
+            'https://api.test.com/management/v1/workspaces/ws_abc/deliveries/del_a',
+            (string) $request->getUri()
+        );
+        $this->assertSame('del_a', $delivery->id);
+        $this->assertTrue($delivery->hasPayload);
+        $this->assertNull($delivery->payload);
+    }
+
+    public function testDeliveriesGetWithIncludePayloadReturnsEnvelope(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([
+                'id' => 'del_a',
+                'idempotencyKey' => 'k1',
+                'endpointId' => 'ep_1',
+                'status' => 'delivered',
+                'totalAttempts' => 1,
+                'firstAttemptAt' => '2026-05-28T14:30:59Z',
+                'deliveredAt' => '2026-05-28T14:30:59Z',
+                'nextRetryAt' => null,
+                'hasPayload' => true,
+                'createdAt' => '2026-05-28T14:30:59Z',
+                'updatedAt' => '2026-05-28T14:30:59Z',
+                'payload' => [
+                    'status' => 'available',
+                    'data' => ['orderId' => 'ord_123'],
+                    'contentType' => 'application/json',
+                ],
+            ])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $delivery = $mgmt->deliveries->get('ws_abc', 'del_a', ['includePayload' => true]);
+        $uri = (string) $this->lastRequest()->getUri();
+
+        $this->assertStringContainsString('include=payload', $uri);
+        $this->assertNotNull($delivery->payload);
+        $this->assertSame('available', $delivery->payload->status);
+        $this->assertSame(['orderId' => 'ord_123'], $delivery->payload->data);
+        $this->assertSame('application/json', $delivery->payload->contentType);
+    }
+
+    public function testDeliveriesGetReturnsForbiddenEnvelopeForPlanGatedWorkspace(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([
+                'id' => 'del_a',
+                'idempotencyKey' => 'k1',
+                'endpointId' => 'ep_1',
+                'status' => 'delivered',
+                'totalAttempts' => 1,
+                'firstAttemptAt' => null,
+                'deliveredAt' => '2026-05-28T14:30:59Z',
+                'nextRetryAt' => null,
+                'hasPayload' => true,
+                'createdAt' => '2026-05-28T14:30:59Z',
+                'updatedAt' => '2026-05-28T14:30:59Z',
+                'payload' => ['status' => 'forbidden'],
+            ])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $delivery = $mgmt->deliveries->get('ws_abc', 'del_a', ['includePayload' => true]);
+
+        $this->assertNotNull($delivery->payload);
+        $this->assertSame('forbidden', $delivery->payload->status);
+        $this->assertNull($delivery->payload->data);
+        $this->assertNull($delivery->payload->contentType);
+    }
+
+    public function testDeliveriesGetAttemptsReturnsArray(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode([
+                [
+                    'id' => 'att_1',
+                    'attemptNumber' => 1,
+                    'status' => 'failed',
+                    'responseStatusCode' => 502,
+                    'responseTimeMs' => 142,
+                    'errorMessage' => 'Bad gateway',
+                    'createdAt' => '2026-05-28T14:31:00Z',
+                ],
+                [
+                    'id' => 'att_2',
+                    'attemptNumber' => 2,
+                    'status' => 'success',
+                    'responseStatusCode' => 200,
+                    'responseTimeMs' => 88,
+                    'errorMessage' => null,
+                    'createdAt' => '2026-05-28T14:31:30Z',
+                ],
+            ])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $attempts = $mgmt->deliveries->getAttempts('ws_abc', 'del_a');
+        $request = $this->lastRequest();
+
+        $this->assertSame('GET', $request->getMethod());
+        $this->assertSame(
+            'https://api.test.com/management/v1/workspaces/ws_abc/deliveries/del_a/attempts',
+            (string) $request->getUri()
+        );
+        $this->assertCount(2, $attempts);
+        $this->assertSame(1, $attempts[0]->attemptNumber);
+        $this->assertSame('success', $attempts[1]->status);
+    }
+
     // ── Headers ──
 
     public function testSendsAuthorizationHeaderWithManagementToken(): void

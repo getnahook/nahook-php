@@ -344,6 +344,99 @@ final class ManagementIntegrationTest extends TestCase
     }
 
     // ---------------------------------------------------------------
+    // Deliveries — reads against pre-seeded fixture rows
+    // ---------------------------------------------------------------
+    //
+    // Fixture data lives in packages/db/src/seeds/test-fixtures.sql:
+    //   del_fixture_001 — delivered, hasPayload=true
+    //   del_fixture_002 — failed, 3 attempts, hasPayload=false
+    //   del_fixture_003 — delivering, hasPayload=false
+    // All three are scoped to ep_integration_test_001.
+
+    public function testDeliveriesListReturnsSeededDeliveriesWithOpaqueNextCursor(): void
+    {
+        $result = $this->mgmt->deliveries->list(
+            $this->workspaceId,
+            'ep_integration_test_001',
+            ['limit' => 2],
+        );
+
+        $this->assertCount(2, $result->data);
+        $ids = array_map(static fn($d) => $d->id, $result->data);
+        $this->assertContains('del_fixture_003', $ids);
+
+        $this->assertIsString($result->nextCursor);
+        $this->assertNotNull($result->nextCursor);
+        $this->assertDoesNotMatchRegularExpression('/^del_/', $result->nextCursor);
+    }
+
+    public function testDeliveriesListWithStatusFailedReturnsOneFixtureDelivery(): void
+    {
+        $result = $this->mgmt->deliveries->list(
+            $this->workspaceId,
+            'ep_integration_test_001',
+            ['status' => 'failed'],
+        );
+
+        $this->assertCount(1, $result->data);
+        $failed = $result->data[0];
+        $this->assertSame('del_fixture_002', $failed->id);
+        $this->assertSame('failed', $failed->status);
+        $this->assertSame(3, $failed->totalAttempts);
+        $this->assertFalse($failed->hasPayload);
+    }
+
+    public function testDeliveriesGetReturnsMetadataWithoutPayloadByDefault(): void
+    {
+        $delivery = $this->mgmt->deliveries->get($this->workspaceId, 'del_fixture_001');
+
+        $this->assertSame('del_fixture_001', $delivery->id);
+        $this->assertSame('ep_integration_test_001', $delivery->endpointId);
+        $this->assertSame('delivered', $delivery->status);
+        $this->assertTrue($delivery->hasPayload);
+        $this->assertNull($delivery->payload);
+    }
+
+    public function testDeliveriesGetWithIncludePayloadReturnsEnvelope(): void
+    {
+        $delivery = $this->mgmt->deliveries->get(
+            $this->workspaceId,
+            'del_fixture_001',
+            ['includePayload' => true],
+        );
+
+        $this->assertNotNull($delivery->payload);
+        // R2 wiring in the test infra may not be configured, in which case the
+        // envelope reports "error" or "not_found". All 5 status values are
+        // valid wire-level responses — do not strict-assert "available".
+        $this->assertContains(
+            $delivery->payload->status,
+            ['available', 'forbidden', 'processing', 'not_found', 'error'],
+        );
+    }
+
+    public function testDeliveriesGetAttemptsReturnsThreeFixtureAttemptsChronologically(): void
+    {
+        $attempts = $this->mgmt->deliveries->getAttempts($this->workspaceId, 'del_fixture_002');
+
+        $this->assertCount(3, $attempts);
+        $this->assertSame(1, $attempts[0]->attemptNumber);
+        $this->assertSame(2, $attempts[1]->attemptNumber);
+        $this->assertSame(3, $attempts[2]->attemptNumber);
+        $this->assertSame(502, $attempts[0]->responseStatusCode);
+    }
+
+    public function testDeliveriesGetReturns404ForNonExistentDelivery(): void
+    {
+        try {
+            $this->mgmt->deliveries->get($this->workspaceId, 'del_does_not_exist_anywhere');
+            $this->fail('Expected NahookAPIError (404) for non-existent delivery');
+        } catch (NahookAPIError $e) {
+            $this->assertSame(404, $e->status);
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Error: Invalid Token
     // ---------------------------------------------------------------
 

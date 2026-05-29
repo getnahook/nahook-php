@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Nahook;
 
 use Nahook\Resources\ApplicationsResource;
+use Nahook\Resources\DeliveriesResource;
 use Nahook\Resources\EndpointsResource;
 use Nahook\Resources\EnvironmentsResource;
 use Nahook\Resources\EventTypesResource;
@@ -19,6 +20,7 @@ final class NahookManagement
     public readonly ApplicationsResource $applications;
     public readonly SubscriptionsResource $subscriptions;
     public readonly PortalSessionsResource $portalSessions;
+    public readonly DeliveriesResource $deliveries;
 
     /**
      * @param string $token Must start with 'nhm_'
@@ -52,5 +54,6 @@ final class NahookManagement
         $this->applications = new ApplicationsResource($http);
         $this->subscriptions = new SubscriptionsResource($http);
         $this->portalSessions = new PortalSessionsResource($http);
+        $this->deliveries = new DeliveriesResource($http);
     }
 }

@@ -257,6 +257,43 @@ $session = $mgmt->portalSessions->create('ws_workspace_id', 'app_abc123', [
 // $session = ['url' => 'https://portal.nahook.com/s/...', 'code' => '...', 'expiresAt' => '...']
 ```
 
+#### Deliveries
+
+Read access to webhook delivery state, attempts, and (on Pro and above) the original decrypted payload.
+
+```php
+// Paginated list, newest-first. `nextCursor` is an opaque encrypted token —
+// pass it back verbatim, do not decode or modify it.
+$page = $mgmt->deliveries->list('ws_workspace_id', 'ep_abc123', ['limit' => 50]);
+// $page->data       -> Delivery[]
+// $page->nextCursor -> ?string
+
+if ($page->nextCursor !== null) {
+    $next = $mgmt->deliveries->list('ws_workspace_id', 'ep_abc123', [
+        'cursor' => $page->nextCursor,
+    ]);
+}
+
+// Filter by status: pending | delivering | delivered | scheduled_retry | failed | dead_letter
+$failed = $mgmt->deliveries->list('ws_workspace_id', 'ep_abc123', ['status' => 'failed']);
+
+// Get a single delivery's status + metadata
+$delivery = $mgmt->deliveries->get('ws_workspace_id', 'del_xyz');
+
+// Get a delivery with its decrypted payload. The response wraps the body in
+// an envelope whose `status` field describes whether the payload is available,
+// gated by plan ("forbidden"), still in flight ("processing"), or absent.
+$withPayload = $mgmt->deliveries->get('ws_workspace_id', 'del_xyz', [
+    'includePayload' => true,
+]);
+if ($withPayload->payload?->status === 'available') {
+    var_dump($withPayload->payload->data); // the original webhook body
+}
+
+// List the attempt history for a delivery (chronological, oldest first)
+$attempts = $mgmt->deliveries->getAttempts('ws_workspace_id', 'del_xyz');
+```
+
 ## Error Handling
 
 All errors extend `Nahook\Errors\NahookError` (which extends `\RuntimeException`).
