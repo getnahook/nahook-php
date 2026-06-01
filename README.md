@@ -121,7 +121,6 @@ $endpoint = $mgmt->endpoints->create('ws_workspace_id', [
     'url' => 'https://example.com/webhook',
     'description' => 'My webhook endpoint',
     'type' => 'webhook',  // 'webhook' or 'slack'
-    'metadata' => ['env' => 'production'],
 ]);
 
 // Get an endpoint
