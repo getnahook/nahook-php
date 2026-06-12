@@ -31,6 +31,14 @@ final class ApplicationsResource
     }
 
     /**
+     * Create an application.
+     *
+     * Supported keys: `name` (required), `externalId`, `metadata`,
+     * `maxEndpoints` (int|null — cap on endpoints, disabled ones count;
+     * 0 = read-only, omit/null = unlimited), `showEventTypes`
+     * (bool — whether the Developer Portal exposes the event-type
+     * catalog; server defaults to true).
+     *
      * @param array<string, mixed> $options
      * @return array<string, mixed>
      */
@@ -55,6 +63,12 @@ final class ApplicationsResource
     }
 
     /**
+     * Update an application.
+     *
+     * `maxEndpoints` is tri-state: leave the key out to keep the current
+     * cap, set it to `null` to clear the cap (unlimited), or set an int
+     * (>= 0) to enforce one. `showEventTypes` is unchanged when omitted.
+     *
      * @param array<string, mixed> $options
      * @return array<string, mixed>
      */

@@ -341,6 +341,91 @@ class ManagementTest extends TestCase
         $this->assertSame('DELETE', $request->getMethod());
     }
 
+    // ── Applications: maxEndpoints + showEventTypes (tri-state) ──
+
+    public function testApplicationsCreateWithMaxEndpointsIncludesIt(): void
+    {
+        $mock = new MockHandler([
+            new Response(201, [], json_encode(['id' => 'app_new', 'name' => 'Acme', 'maxEndpoints' => 2, 'showEventTypes' => true])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $result = $mgmt->applications->create('ws_abc', ['name' => 'Acme', 'maxEndpoints' => 2]);
+        $body = json_decode((string) $this->lastRequest()->getBody(), true);
+
+        $this->assertSame(2, $body['maxEndpoints']);
+        $this->assertSame(2, $result['maxEndpoints']);
+    }
+
+    public function testApplicationsCreateWithShowEventTypesFalseIncludesIt(): void
+    {
+        $mock = new MockHandler([
+            new Response(201, [], json_encode(['id' => 'app_new', 'name' => 'Acme', 'maxEndpoints' => null, 'showEventTypes' => false])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $result = $mgmt->applications->create('ws_abc', ['name' => 'Acme', 'showEventTypes' => false]);
+        $body = json_decode((string) $this->lastRequest()->getBody(), true);
+
+        $this->assertFalse($body['showEventTypes']);
+        $this->assertFalse($result['showEventTypes']);
+    }
+
+    public function testApplicationsCreateOmitsUnsetCapFields(): void
+    {
+        $mock = new MockHandler([
+            new Response(201, [], json_encode(['id' => 'app_new', 'name' => 'Acme'])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->applications->create('ws_abc', ['name' => 'Acme']);
+        $body = json_decode((string) $this->lastRequest()->getBody(), true);
+
+        $this->assertArrayNotHasKey('maxEndpoints', $body);
+        $this->assertArrayNotHasKey('showEventTypes', $body);
+    }
+
+    public function testApplicationsUpdateMaxEndpointsNullSendsExplicitNull(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['id' => 'app_1', 'name' => 'Acme', 'maxEndpoints' => null, 'showEventTypes' => true])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->applications->update('ws_abc', 'app_1', ['maxEndpoints' => null]);
+        $body = json_decode((string) $this->lastRequest()->getBody(), true);
+
+        $this->assertArrayHasKey('maxEndpoints', $body);
+        $this->assertNull($body['maxEndpoints']);
+    }
+
+    public function testApplicationsUpdateOmitsCapFieldsWhenAbsent(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['id' => 'app_1', 'name' => 'Renamed'])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $mgmt->applications->update('ws_abc', 'app_1', ['name' => 'Renamed']);
+        $body = json_decode((string) $this->lastRequest()->getBody(), true);
+
+        $this->assertArrayNotHasKey('maxEndpoints', $body);
+        $this->assertArrayNotHasKey('showEventTypes', $body);
+    }
+
+    public function testApplicationsResponseExposesCapFields(): void
+    {
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['id' => 'app_1', 'name' => 'Acme', 'maxEndpoints' => 5, 'showEventTypes' => false])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $result = $mgmt->applications->get('ws_abc', 'app_1');
+
+        $this->assertSame(5, $result['maxEndpoints']);
+        $this->assertFalse($result['showEventTypes']);
+    }
+
     public function testApplicationsListEndpointsSendsGetToApplicationsIdEndpoints(): void
     {
         $mock = new MockHandler([
