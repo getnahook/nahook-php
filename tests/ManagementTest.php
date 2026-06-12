@@ -426,6 +426,22 @@ class ManagementTest extends TestCase
         $this->assertFalse($result['showEventTypes']);
     }
 
+    public function testApplicationsResponseWithoutCapFieldsPassesThroughRaw(): void
+    {
+        // The SDK returns the decoded JSON array as-is: absent fields are
+        // missing keys, unlike the typed SDKs which default showEventTypes
+        // to true. The live API always sends both fields.
+        $mock = new MockHandler([
+            new Response(200, [], json_encode(['id' => 'app_1', 'name' => 'Acme'])),
+        ]);
+        $mgmt = $this->createManagement($mock);
+
+        $result = $mgmt->applications->get('ws_abc', 'app_1');
+
+        $this->assertArrayNotHasKey('maxEndpoints', $result);
+        $this->assertArrayNotHasKey('showEventTypes', $result);
+    }
+
     public function testApplicationsListEndpointsSendsGetToApplicationsIdEndpoints(): void
     {
         $mock = new MockHandler([
