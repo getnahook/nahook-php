@@ -188,6 +188,110 @@ final class ManagementIntegrationTest extends TestCase
     }
 
     // ---------------------------------------------------------------
+    // Applications — maxEndpoints cap lifecycle
+    // ---------------------------------------------------------------
+
+    public function testApplicationMaxEndpointsCapLifecycle(): void
+    {
+        $ts = time();
+        $appId = null;
+        $endpointIds = [];
+
+        try {
+            // I1: create with maxEndpoints=2, showEventTypes=false — echoed and persisted
+            $created = $this->mgmt->applications->create($this->workspaceId, [
+                'name' => "PHP Cap Test App {$ts}",
+                'maxEndpoints' => 2,
+                'showEventTypes' => false,
+            ]);
+            $this->assertArrayHasKey('id', $created);
+            $appId = $created['id'];
+            $this->assertStringStartsWith('app_', $appId);
+            $this->assertSame(2, $created['maxEndpoints']);
+            $this->assertFalse($created['showEventTypes']);
+
+            $fetched = $this->mgmt->applications->get($this->workspaceId, $appId);
+            $this->assertSame(2, $fetched['maxEndpoints']);
+            $this->assertFalse($fetched['showEventTypes']);
+
+            // I2: update both fields — echoed and persisted
+            $updated = $this->mgmt->applications->update($this->workspaceId, $appId, [
+                'maxEndpoints' => 1,
+                'showEventTypes' => true,
+            ]);
+            $this->assertSame(1, $updated['maxEndpoints']);
+            $this->assertTrue($updated['showEventTypes']);
+
+            $fetched = $this->mgmt->applications->get($this->workspaceId, $appId);
+            $this->assertSame(1, $fetched['maxEndpoints']);
+            $this->assertTrue($fetched['showEventTypes']);
+
+            // I3: first endpoint fits under the cap; second hits the limit
+            $endpoint1 = $this->mgmt->applications->createEndpoint($this->workspaceId, $appId, [
+                'url' => 'https://httpbin.org/post',
+            ]);
+            $this->assertArrayHasKey('id', $endpoint1);
+            $endpointIds[] = $endpoint1['id'];
+
+            try {
+                $overCap = $this->mgmt->applications->createEndpoint($this->workspaceId, $appId, [
+                    'url' => 'https://httpbin.org/post',
+                ]);
+                $endpointIds[] = $overCap['id'];
+                $this->fail('Expected NahookAPIError (403) when exceeding maxEndpoints cap');
+            } catch (NahookAPIError $e) {
+                $this->assertSame(403, $e->status);
+                $this->assertSame('application_endpoint_limit_reached', $e->errorCode);
+            }
+
+            // I4: disabled endpoints still count toward the cap
+            $this->mgmt->endpoints->update($this->workspaceId, $endpoint1['id'], [
+                'isActive' => false,
+            ]);
+
+            try {
+                $stillOverCap = $this->mgmt->applications->createEndpoint($this->workspaceId, $appId, [
+                    'url' => 'https://httpbin.org/post',
+                ]);
+                $endpointIds[] = $stillOverCap['id'];
+                $this->fail('Expected NahookAPIError (403) — disabled endpoints count toward the cap');
+            } catch (NahookAPIError $e) {
+                $this->assertSame(403, $e->status);
+                $this->assertSame('application_endpoint_limit_reached', $e->errorCode);
+            }
+
+            // I5: explicit null clears the cap (tri-state update); creation succeeds again
+            $cleared = $this->mgmt->applications->update($this->workspaceId, $appId, [
+                'maxEndpoints' => null,
+            ]);
+            $this->assertArrayHasKey('maxEndpoints', $cleared);
+            $this->assertNull($cleared['maxEndpoints']);
+
+            $endpoint2 = $this->mgmt->applications->createEndpoint($this->workspaceId, $appId, [
+                'url' => 'https://httpbin.org/post',
+            ]);
+            $this->assertArrayHasKey('id', $endpoint2);
+            $endpointIds[] = $endpoint2['id'];
+        } finally {
+            // Cleanup — swallow exceptions so teardown failures don't mask assertions
+            foreach ($endpointIds as $endpointId) {
+                try {
+                    $this->mgmt->endpoints->delete($this->workspaceId, $endpointId);
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
+            if ($appId !== null) {
+                try {
+                    $this->mgmt->applications->delete($this->workspaceId, $appId);
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Subscriptions Lifecycle
     // ---------------------------------------------------------------
 
